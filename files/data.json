@@ -1,0 +1,40 @@
+{
+  "subjects": [
+    {
+      "id": "s1",
+      "name": "Chemistry",
+      "attended": 5,
+      "total": 7
+    },
+    {
+      "id": "s2",
+      "name": "AI",
+      "attended": 18,
+      "total": 20
+    },
+    {
+      "id": "s3",
+      "name": "Mathematics",
+      "attended": 3,
+      "total": 4
+    },
+    {
+      "id": "s4",
+      "name": "Elective",
+      "attended": 0,
+      "total": 0
+    },
+    {
+      "id": "s5",
+      "name": "English",
+      "attended": 0,
+      "total": 0
+    },
+    {
+      "id": "s6",
+      "name": "Constitution",
+      "attended": 0,
+      "total": 0
+    }
+  ]
+}

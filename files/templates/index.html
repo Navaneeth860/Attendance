@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClassPilot</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0f0f0f;
+    --card:     #1a1a1a;
+    --border:   #2a2a2a;
+    --text:     #f0f0f0;
+    --muted:    #666;
+    --secondary:#999;
+    --safe:     #22c55e;
+    --warning:  #eab308;
+    --critical: #ef4444;
+    --mono:     'Courier New', monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px 48px;
+  }
+
+  /* ── Header ── */
+  .header {
+    max-width: 900px;
+    margin: 0 auto 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .logo { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+  .logo span { color: var(--safe); }
+  .nav-btns { display: flex; gap: 8px; }
+  .nav-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--secondary);
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: color .15s, border-color .15s;
+  }
+  .nav-btn:hover, .nav-btn.active { color: var(--text); border-color: #444; }
+  .nav-btn.active { background: #222; }
+
+  /* ── Layout ── */
+  .container { max-width: 900px; margin: 0 auto; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── Summary card ── */
+  .summary {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat { text-align: center; }
+  .stat-val { font-family: var(--mono); font-size: 26px; font-weight: 700; }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .05em; }
+  .stat-val.safe { color: var(--safe); }
+  .stat-val.warning { color: var(--warning); }
+  .stat-val.critical { color: var(--critical); }
+
+  /* ── Grid ── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  /* ── Subject card ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 18px 16px;
+  }
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+  .subject-name { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge.safe     { background: rgba(34,197,94,.12);  color: var(--safe);     }
+  .badge.warning  { background: rgba(234,179,8,.12);  color: var(--warning);  }
+  .badge.critical { background: rgba(239,68,68,.12);  color: var(--critical); }
+
+  .pct-wrap { text-align: right; }
+  .pct { font-family: var(--mono); font-size: 24px; font-weight: 700; line-height: 1; }
+  .pct.safe     { color: var(--safe);     }
+  .pct.warning  { color: var(--warning);  }
+  .pct.critical { color: var(--critical); }
+  .fraction { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* progress bar */
+  .bar-wrap { position: relative; height: 4px; background: #2a2a2a; border-radius: 2px; margin-bottom: 4px; }
+  .bar-fill { height: 100%; border-radius: 2px; transition: width .4s ease; }
+  .bar-fill.safe     { background: var(--safe);     }
+  .bar-fill.warning  { background: var(--warning);  }
+  .bar-fill.critical { background: var(--critical); }
+  .bar-marker {
+    position: absolute;
+    left: 85%;
+    top: -4px;
+    bottom: -4px;
+    width: 1.5px;
+    background: #555;
+    border-radius: 1px;
+  }
+  .bar-label { font-family: var(--mono); font-size: 9px; color: var(--muted); text-align: right; margin-bottom: 12px; }
+
+  /* insight */
+  .insight {
+    background: #111;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--secondary);
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .insight strong { color: var(--text); font-size: 11px; display: block; margin-bottom: 2px; font-weight: 600; letter-spacing: .02em; }
+
+  /* action buttons */
+  .actions { display: flex; gap: 8px; }
+  .btn {
+    flex: 1;
+    padding: 9px 0;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn.present { background: rgba(34,197,94,.15); color: var(--safe);     border: 1px solid rgba(34,197,94,.25); }
+  .btn.absent  { background: rgba(239,68,68,.15); color: var(--critical); border: 1px solid rgba(239,68,68,.25); }
+  .btn.reset   { background: transparent; color: var(--muted); border: 1px solid var(--border); font-size: 11px; flex: 0 0 auto; padding: 9px 12px; }
+  .btn:hover { opacity: .8; }
+
+  /* ── Settings view ── */
+  .settings-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .settings-sub { font-size: 13px; color: var(--secondary); margin-bottom: 18px; }
+  .settings-grid { display: grid; gap: 10px; }
+  .settings-row { display: grid; gap: 6px; }
+  .settings-row label { font-size: 12px; color: var(--secondary); }
+  .settings-row input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    padding: 11px 14px;
+    font-size: 13px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .settings-row input:focus { border-color: #444; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #222;
+    border: 1px solid #333;
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    transition: transform .25s ease;
+    z-index: 99;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 500px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Class<span>Pilot</span> ✈</div>
+  <div class="nav-btns">
+    <button class="nav-btn active" onclick="showView('dashboard')">Dashboard</button>
+    <button class="nav-btn"        onclick="showView('settings')">Settings</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Dashboard -->
+  <div id="view-dashboard" class="view active">
+    <div class="summary" id="summary"></div>
+    <div class="grid"    id="grid"></div>
+  </div>
+
+  <!-- Settings -->
+  <div id="view-settings" class="view">
+    <div class="card" style="max-width:480px">
+      <div class="settings-title">Subject Names</div>
+      <p class="settings-sub">Rename subjects to match your courses. Saved automatically.</p>
+      <div class="settings-grid" id="settings-grid"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let DATA = null;
+
+  // ── View switching ────────────────────────────────────────────────────────
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    event.currentTarget.classList.add('active');
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000);
+  }
+
+  // ── API helpers ───────────────────────────────────────────────────────────
+  async function api(url, body) {
+    const opts = body
+      ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+      : {};
+    const r = await fetch(url, opts);
+    return r.json();
+  }
+
+  async function loadData() {
+    DATA = await api('/api/data');
+    render();
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  function render() {
+    renderSummary(DATA.summary);
+    renderGrid(DATA.subjects);
+    renderSettings(DATA.subjects);
+  }
+
+  function cls(risk) { return risk.toLowerCase(); }
+
+  function renderSummary(s) {
+    document.getElementById('summary').innerHTML = `
+      <div class="stat">
+        <div class="stat-val">${s.total}</div>
+        <div class="stat-label">Subjects</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val safe">${s.safe}</div>
+        <div class="stat-label">Safe</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val warning">${s.warning}</div>
+        <div class="stat-label">Warning</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val critical">${s.critical}</div>
+        <div class="stat-label">Critical</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">${s.safe_pct}%</div>
+        <div class="stat-label">Safe rate</div>
+      </div>
+    `;
+  }
+
+  function renderGrid(subjects) {
+    document.getElementById('grid').innerHTML = subjects.map(s => {
+      const c   = cls(s.risk_level);
+      const pct = s.total === 0 ? 0 : Math.min(s.percentage, 100);
+      const insightHead = s.percentage >= 85
+        ? (s.classes_can_skip > 0 ? `Can skip ${s.classes_can_skip} more` : 'On track')
+        : 'Action required';
+
+      return `
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="subject-name">${s.name}</div>
+              <span class="badge ${c}">${s.risk_level}</span>
+            </div>
+            <div class="pct-wrap">
+              <div class="pct ${c}">${s.total === 0 ? '—' : s.percentage + '%'}</div>
+              <div class="fraction">${s.attended}/${s.total}</div>
+            </div>
+          </div>
+
+          <div class="bar-wrap">
+            <div class="bar-fill ${c}" style="width:${pct}%"></div>
+            <div class="bar-marker"></div>
+          </div>
+          <div class="bar-label">85%</div>
+
+          <div class="insight">
+            <strong>${insightHead}</strong>
+            ${s.insight}
+          </div>
+
+          <div class="actions">
+            <button class="btn present" onclick="mark('${s.id}','present')">✓ Present</button>
+            <button class="btn absent"  onclick="mark('${s.id}','absent')">✗ Absent</button>
+            <button class="btn reset"   onclick="resetSubject('${s.id}')">Reset</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderSettings(subjects) {
+    document.getElementById('settings-grid').innerHTML = subjects.map((s, i) => `
+      <div class="settings-row">
+        <label>Subject ${i + 1}</label>
+        <input
+          type="text"
+          value="${s.name}"
+          data-id="${s.id}"
+          onchange="rename('${s.id}', this.value)"
+          placeholder="Enter subject name"
+        />
+      </div>
+    `).join('');
+  }
+
+  // ── Actions ───────────────────────────────────────────────────────────────
+  async function mark(id, status) {
+    await api('/api/mark', { subject_id: id, status });
+    await loadData();
+    toast(status === 'present' ? '✓ Marked present' : '✗ Marked absent');
+  }
+
+  async function rename(id, name) {
+    if (!name.trim()) return;
+    await api('/api/rename', { subject_id: id, name: name.trim() });
+    await loadData();
+    toast('Name saved');
+  }
+
+  async function resetSubject(id) {
+    if (!confirm('Reset this subject to 0/0?')) return;
+    await api('/api/reset', { subject_id: id });
+    await loadData();
+    toast('Subject reset');
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  loadData();
+</script>
+</body>
+</html>
